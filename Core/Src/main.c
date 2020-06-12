@@ -52,6 +52,18 @@ const osThreadAttr_t heartbeatTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
+/* Definitions for UsbTask */
+osThreadId_t UsbTaskHandle;
+const osThreadAttr_t UsbTask_attributes = {
+  .name = "UsbTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
+/* Definitions for queueToUsb */
+osMessageQueueId_t queueToUsbHandle;
+const osMessageQueueAttr_t queueToUsb_attributes = {
+  .name = "queueToUsb"
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -61,6 +73,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 void StartHeartbeatTask(void *argument);
+extern void StartUsbTask(void *argument);
 
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
@@ -123,6 +136,10 @@ int main(void)
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* creation of queueToUsb */
+  queueToUsbHandle = osMessageQueueNew (16, sizeof(uint8_t), &queueToUsb_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -130,6 +147,9 @@ int main(void)
   /* Create the thread(s) */
   /* creation of heartbeatTask */
   heartbeatTaskHandle = osThreadNew(StartHeartbeatTask, NULL, &heartbeatTask_attributes);
+
+  /* creation of UsbTask */
+  UsbTaskHandle = osThreadNew(StartUsbTask, NULL, &UsbTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

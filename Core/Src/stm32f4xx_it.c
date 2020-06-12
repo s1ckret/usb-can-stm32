@@ -239,6 +239,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   case GPIO_PIN_15:
     break;
   default:
+    break;
   }
   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
 }
