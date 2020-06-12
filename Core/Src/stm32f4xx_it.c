@@ -221,6 +221,26 @@ void OTG_FS_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+/*
+ *   In early versions Buttons interrupts emulate USB, CAN interrupts and notifications.
+ *   After that buttons will be responsible for cursor control.
+*/
+  switch (GPIO_Pin) {
+  case GPIO_PIN_6:
+    break;
+  case GPIO_PIN_8:
+    break;
+  case GPIO_PIN_9:
+    break;
+  case GPIO_PIN_11:
+    break;
+  case GPIO_PIN_15:
+    break;
+  default:
+  }
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
