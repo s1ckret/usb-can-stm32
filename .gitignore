@@ -1,0 +1,3 @@
+# Ignore next files/dirs
+Debug/
+usb-can-407vg Debug.launch
