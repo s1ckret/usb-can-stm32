@@ -25,7 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,25 +47,12 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
-/* Definitions for heartbeatTask */
-osThreadId_t heartbeatTaskHandle;
-const osThreadAttr_t heartbeatTask_attributes = {
-  .name = "heartbeatTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
-};
-/* Definitions for UsbTask */
-osThreadId_t UsbTaskHandle;
-const osThreadAttr_t UsbTask_attributes = {
-  .name = "UsbTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
-};
-/* Definitions for queueToUsb */
-osMessageQueueId_t queueToUsbHandle;
-const osMessageQueueAttr_t queueToUsb_attributes = {
-  .name = "queueToUsb"
-};
+/* Tasks */
+TaskHandle_t heartbeatTaskHandle;
+TaskHandle_t UsbTaskHandle;
+
+/* Queues */
+QueueHandle_t queueToUsb;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -117,46 +106,20 @@ int main(void)
 
   /* Initialize interrupts */
   MX_NVIC_Init();
-  /* USER CODE BEGIN 2 */
 
+  /* USER CODE BEGIN 2 */
+  queueToUsb = xQueueCreate (16, sizeof(uint8_t));
+
+  if (xTaskCreate ((TaskFunction_t)StartHeartbeatTask, "heartbeatTask", 128U, NULL, 24U, &heartbeatTaskHandle) != pdPASS) {
+    heartbeatTaskHandle = NULL;
+  }
+  if (xTaskCreate ((TaskFunction_t)StartUsbTask, "UsbTask", 128U, NULL, 24U, &UsbTaskHandle) != pdPASS) {
+    UsbTaskHandle = NULL;
+  }
   /* USER CODE END 2 */
 
-  /* Init scheduler */
-  osKernelInitialize();
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* Create the queue(s) */
-  /* creation of queueToUsb */
-  queueToUsbHandle = osMessageQueueNew (16, sizeof(uint8_t), &queueToUsb_attributes);
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* creation of heartbeatTask */
-  heartbeatTaskHandle = osThreadNew(StartHeartbeatTask, NULL, &heartbeatTask_attributes);
-
-  /* creation of UsbTask */
-  UsbTaskHandle = osThreadNew(StartUsbTask, NULL, &UsbTask_attributes);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
   /* Start scheduler */
-  osKernelStart();
+  vTaskStartScheduler();
  
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
