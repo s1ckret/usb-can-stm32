@@ -50,9 +50,11 @@ CAN_HandleTypeDef hcan1;
 /* Tasks */
 TaskHandle_t heartbeatTaskHandle;
 TaskHandle_t UsbTaskHandle;
+TaskHandle_t CanTaskHandle;
 
 /* Queues */
 QueueHandle_t queueToUsb;
+QueueHandle_t queueToCan;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -63,6 +65,7 @@ static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 void StartHeartbeatTask(void *argument);
 extern void StartUsbTask(void *argument);
+extern void StartCanTask(void *argument);
 
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
@@ -109,12 +112,16 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   queueToUsb = xQueueCreate (16, sizeof(uint8_t));
+  queueToCan = xQueueCreate (16, sizeof(uint8_t));
 
   if (xTaskCreate ((TaskFunction_t)StartHeartbeatTask, "heartbeatTask", 128U, NULL, 24U, &heartbeatTaskHandle) != pdPASS) {
     heartbeatTaskHandle = NULL;
   }
   if (xTaskCreate ((TaskFunction_t)StartUsbTask, "UsbTask", 128U, NULL, 24U, &UsbTaskHandle) != pdPASS) {
     UsbTaskHandle = NULL;
+  }
+  if (xTaskCreate ((TaskFunction_t)StartCanTask, "CanTask", 128U, NULL, 24U, &CanTaskHandle) != pdPASS) {
+    CanTaskHandle = NULL;
   }
   /* USER CODE END 2 */
 
