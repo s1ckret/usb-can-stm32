@@ -23,6 +23,8 @@
 #include "stm32f4xx_it.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -62,7 +64,8 @@ extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN EV */
-
+extern TaskHandle_t UsbTaskHandle;
+extern QueueHandle_t queueToUsb;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -221,14 +224,19 @@ void OTG_FS_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+uint8_t data = 0;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 /*
  *   In early versions Buttons interrupts emulate USB, CAN interrupts and notifications.
  *   After that buttons will be responsible for cursor control.
 */
+  data++;
+  BaseType_t pxHigherPriorityTaskWoken = 0;
   switch (GPIO_Pin) {
   case GPIO_PIN_6:
+    xQueueSendFromISR(queueToUsb, &data, &pxHigherPriorityTaskWoken);
+    xTaskNotifyFromISR(UsbTaskHandle, 1, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
   case GPIO_PIN_8:
     break;
