@@ -253,6 +253,13 @@ void OTG_FS_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 uint8_t data = 0;
+uint32_t mailbox = 0;
+CAN_TxHeaderTypeDef txHeader = {
+    .DLC = 1,
+	.IDE = CAN_ID_STD,
+	.RTR = CAN_RTR_DATA,
+	.StdId = 0x1,
+};
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 /*
@@ -267,6 +274,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     xTaskNotifyFromISR(UsbTaskHandle, 1, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
   case GPIO_PIN_8:
+    HAL_CAN_AddTxMessage(&hcan1, &txHeader, &data, &mailbox);
     break;
   case GPIO_PIN_9:
     break;
@@ -278,6 +286,29 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     break;
   }
   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+}
+
+
+uint8_t dataToReceive = 0;
+CAN_RxHeaderTypeDef rxHeader;
+BaseType_t pxHigherPriorityTaskWoken = 0;
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, &dataToReceive) != HAL_OK) {
+    while(1);
+  }
+
+  xQueueSendFromISR(queueToUsb, &dataToReceive, &pxHigherPriorityTaskWoken);
+  xTaskNotifyFromISR(UsbTaskHandle, 2, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+}
+
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &rxHeader, &dataToReceive) != HAL_OK) {
+    while(1);
+  }
+  xQueueSendFromISR(queueToUsb, &dataToReceive, &pxHigherPriorityTaskWoken);
+  xTaskNotifyFromISR(UsbTaskHandle, 3, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
 }
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
