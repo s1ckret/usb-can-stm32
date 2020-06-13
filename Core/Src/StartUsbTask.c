@@ -25,9 +25,10 @@ void StartUsbTask(void *argument)
   {
     if (xTaskNotifyWait(pdFALSE, pdTRUE, &notificationNumber, portMAX_DELAY) == pdTRUE) {
       sprintf(buf, "Usb Task: Notification %u has been taken\r\n", notificationNumber);
-
-      if (xQueueReceive(queueToUsb, &data, 0) == pdTRUE) {
-        sprintf(buf + strlen(buf), "Usb Task: Data received: %u\r\n", data);
+      while (uxQueueMessagesWaiting(queueToUsb)) {
+        if (xQueueReceive(queueToUsb, &data, 0) == pdTRUE) {
+          sprintf(buf + strlen(buf), "Usb Task: Data received: %u\r\n", data);
+        }
       }
     }
     else {
