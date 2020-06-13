@@ -247,6 +247,10 @@ static void MX_CAN1_Init(void)
   if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
     Error_Handler();
   }
+
+  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_FULL || CAN_IT_RX_FIFO1_FULL) != HAL_OK) {
+    Error_Handler();
+  }
   /* USER CODE END CAN1_Init 2 */
 
 }
