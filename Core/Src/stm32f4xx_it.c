@@ -21,11 +21,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+#include "StartLcdTask.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,6 +68,7 @@ extern TIM_HandleTypeDef htim1;
 /* USER CODE BEGIN EV */
 extern TaskHandle_t UsbTaskHandle;
 extern QueueHandle_t queueToUsb;
+extern TaskHandle_t LcdTaskHandle;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -250,37 +253,20 @@ void OTG_FS_IRQHandler(void)
 
   /* USER CODE END OTG_FS_IRQn 1 */
 }
-
 /* USER CODE BEGIN 1 */
-uint8_t data = 0;
-uint32_t mailbox = 0;
-CAN_TxHeaderTypeDef txHeader = {
-    .DLC = 1,
-	.IDE = CAN_ID_STD,
-	.RTR = CAN_RTR_DATA,
-	.StdId = 0x1,
-};
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-/*
- *   In early versions Buttons interrupts emulate USB, CAN interrupts and notifications.
- *   After that buttons will be responsible for cursor control.
-*/
-  data++;
   BaseType_t pxHigherPriorityTaskWoken = 0;
   switch (GPIO_Pin) {
-  case GPIO_PIN_6:
-    xQueueSendFromISR(queueToUsb, &data, &pxHigherPriorityTaskWoken);
-    xTaskNotifyFromISR(UsbTaskHandle, 1, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  case GPIO_PIN_6: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_UP, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
-  case GPIO_PIN_8:
-    HAL_CAN_AddTxMessage(&hcan1, &txHeader, &data, &mailbox);
+  case GPIO_PIN_8: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_DOWN, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
-  case GPIO_PIN_9:
+  case GPIO_PIN_9: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_LEFT, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
-  case GPIO_PIN_11:
+  case GPIO_PIN_11: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_RIGHT, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
-  case GPIO_PIN_15:
+  case GPIO_PIN_15: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_SET, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
   default:
     break;

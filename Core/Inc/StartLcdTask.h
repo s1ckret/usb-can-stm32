@@ -8,10 +8,15 @@
 #ifndef INC_STARTUSBTASK_H_
 #define INC_STARTUSBTASK_H_
 
-/*
- * This task receive data from @queueToUsb
- * and wakes up when notified.
- */
+enum LCD_CTRL {
+  LCD_CTRL_UP = 0,
+  LCD_CTRL_DOWN,
+  LCD_CTRL_LEFT,
+  LCD_CTRL_RIGHT,
+  LCD_CTRL_SET,
+  LCD_CTRL_COUNT
+};
+
 void StartLcdTask(void *argument);
 
 #endif /* INC_STARTUSBTASK_H_ */

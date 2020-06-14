@@ -22,12 +22,14 @@ void StartLcdTask(void *argument)
   vTaskDelay(1000);
   printf("DLC:    %u\n", DLC);
   printf("Fltr: 0x%05x\n", Filter);
+  LCD_SetPos(8, 0);
 
   uint32_t notificationNumber = 0;
   for(;;)
   {
     if (xTaskNotifyWait(pdFALSE, pdTRUE, &notificationNumber, portMAX_DELAY) == pdTRUE) {
-
+      printf("%u\n", notificationNumber);
+      LCD_SetPos(8, 0);
     }
   }
 }
