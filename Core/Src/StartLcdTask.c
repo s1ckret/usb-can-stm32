@@ -13,6 +13,10 @@
 
 #include "std_lcd.h"
 
+#define N_COLUMNS 16
+#define START_POS 8
+#define CAN_MAX_EXT_ID 0x1FFFFFFF
+
 static int8_t x = 8;
 static int8_t y = 0;
 
@@ -55,21 +59,32 @@ void StartLcdTask(void *argument)
 
 static void __ctrl_up(void)
 {
-  if (x == 8 && y == 0)
+  if (x == START_POS && y == 0)
   {
     DLC++;
     if (DLC > 8) DLC = 1;
-    LCD_SetPos(8, 0);
+    LCD_SetPos(START_POS, 0);
     printf("%u\n", DLC);
   }
-  else if (x > 7 && x < 17 && y == 1) {
+  else if (x > 7 && x < N_COLUMNS && y == 1) {
     uint32_t old = Filter;
-    Filter += 0x1 << (4 * (15 - x));
-    LCD_SetPos(8, 1);
-    if (Filter > 0x1FFFFFFF) Filter = (0x1 << (4 * (15 - x))) - (0x1FFFFFFF - old) - 1;
+    /*
+    * Calculate increment for selected digit in hex number.
+    * Shift bit to corresponding digit in hex number.
+    */
+    uint32_t diff = 0b1 << (4 * (N_COLUMNS - 1 - x));
+
+    Filter += diff;
+    if (Filter > CAN_MAX_EXT_ID) {
+      /* Calculate overflow */
+      Filter = diff - (CAN_MAX_EXT_ID - old) - 1;
+    }
+
+    LCD_SetPos(START_POS, 1);
     printf("%08x\n", Filter);
   }
   else {
+    /* Change line */
     y ^= 1;
   }
   LCD_SetPos(x, y);
@@ -77,21 +92,32 @@ static void __ctrl_up(void)
 
 static void __ctrl_down(void)
 {
-  if (x == 8 && y == 0)
+  if (x == START_POS && y == 0)
   {
     DLC--;
     if (DLC < 1) DLC = 8;
-    LCD_SetPos(8, 0);
+    LCD_SetPos(START_POS, 0);
     printf("%u\n", DLC);
   }
-  else if (x > 7 && x < 17 && y == 1) {
+  else if (x > START_POS - 1 && x < N_COLUMNS && y == 1) {
     uint32_t old = Filter;
-    Filter -= 0x1 << (4 * (15 - x));
-    if (Filter > 0x1FFFFFFF) Filter = 0x1FFFFFFF + old - (0x1 << (4 * (15 - x))) + 1;
-    LCD_SetPos(8, 1);
+    /*
+     * Calculate decrement for selected digit in hex number.
+     * Shift bit to corresponding digit in hex number.
+     */
+    uint32_t diff = 0b1 << (4 * (N_COLUMNS - 1 - x));
+
+    Filter -= diff;
+    if (Filter > CAN_MAX_EXT_ID) {
+        /* Calculate overflow */
+      Filter = CAN_MAX_EXT_ID + old - diff + 1;
+    }
+
+    LCD_SetPos(START_POS, 1);
     printf("%08x\n", Filter);
   }
   else {
+    /* Change line */
     y ^= 1;
   }
   LCD_SetPos(x, y);
