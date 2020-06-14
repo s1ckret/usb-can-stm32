@@ -152,8 +152,7 @@ void LCD_Init(void) {
 	LCD_Command(0x20 | 0x08);
 
 	LCD_Command(0x01);						// Clear screen
-	LCD_Command( 0x08 | 0x04);	// Lcd-on, cursor-off, no-blink
+	LCD_Command( 0xF);	// Lcd-on, cursor-on, blink
 	LCD_Command( 0x04 | 0x02);		// Increment cursor
-
 }
 
