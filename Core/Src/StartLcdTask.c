@@ -31,6 +31,9 @@ static void __ctrl_left(void);
 static void __ctrl_right(void);
 static void __ctrl_set(void);
 
+static int unsaved_flag = 0;
+static void __ctrl_disp_unsaved(void);
+
 static process_ctrl glueTable[LCD_CTRL_COUNT] =
 {
   __ctrl_up,
@@ -65,6 +68,8 @@ static void __ctrl_up(void)
     if (DLC > 8) DLC = 1;
     LCD_SetPos(START_POS, 0);
     printf("%u\n", DLC);
+
+    unsaved_flag |= 1;
   }
   else if (x > 7 && x < N_COLUMNS && y == 1) {
     uint32_t old = Filter;
@@ -82,11 +87,14 @@ static void __ctrl_up(void)
 
     LCD_SetPos(START_POS, 1);
     printf("%08x\n", Filter);
+
+    unsaved_flag |= 2;
   }
   else {
     /* Change line */
     y ^= 1;
   }
+  __ctrl_disp_unsaved();
   LCD_SetPos(x, y);
 }
 
@@ -98,6 +106,8 @@ static void __ctrl_down(void)
     if (DLC < 1) DLC = 8;
     LCD_SetPos(START_POS, 0);
     printf("%u\n", DLC);
+
+    unsaved_flag |= 1;
   }
   else if (x > START_POS - 1 && x < N_COLUMNS && y == 1) {
     uint32_t old = Filter;
@@ -115,11 +125,14 @@ static void __ctrl_down(void)
 
     LCD_SetPos(START_POS, 1);
     printf("%08x\n", Filter);
+
+    unsaved_flag |= 2;
   }
   else {
     /* Change line */
     y ^= 1;
   }
+  __ctrl_disp_unsaved();
   LCD_SetPos(x, y);
 }
 
@@ -139,5 +152,30 @@ static void __ctrl_right(void)
 
 static void __ctrl_set(void)
 {
-
+  if (y == 0) {
+    /* Set DLC to CAN */
+    LCD_SetPos(13, 0);
+    LCD_SendChar(' ');
+    unsaved_flag &= 0b10;
+  }
+  else {
+    /* Set Filter to CAN */
+    LCD_SetPos(15, 0);
+    LCD_SendChar(' ');
+    unsaved_flag &= 0b01;
+  }
+  LCD_SetPos(x, y);
 }
+
+static void __ctrl_disp_unsaved(void)
+{
+  if (unsaved_flag & 0b01) {
+    LCD_SetPos(13, 0);
+    LCD_SendChar('U');
+  }
+  if (unsaved_flag & 0b10) {
+    LCD_SetPos(15, 0);
+    LCD_SendChar('U');
+  }
+}
+
