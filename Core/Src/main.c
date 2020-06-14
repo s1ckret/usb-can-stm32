@@ -51,6 +51,7 @@ CAN_HandleTypeDef hcan1;
 TaskHandle_t heartbeatTaskHandle;
 TaskHandle_t UsbTaskHandle;
 TaskHandle_t CanTaskHandle;
+TaskHandle_t LcdTaskHandle;
 
 /* Queues */
 QueueHandle_t queueToUsb;
@@ -66,6 +67,7 @@ static void MX_CAN1_Init(void);
 void StartHeartbeatTask(void *argument);
 extern void StartUsbTask(void *argument);
 extern void StartCanTask(void *argument);
+extern void StartLcdTask(void *argument);
 
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
@@ -106,7 +108,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
-
+  LCD_Init();
   /* Initialize interrupts */
   MX_NVIC_Init();
 
@@ -123,8 +125,11 @@ int main(void)
   if (xTaskCreate ((TaskFunction_t)StartCanTask, "CanTask", 128U, NULL, 24U, &CanTaskHandle) != pdPASS) {
     CanTaskHandle = NULL;
   }
-  /* USER CODE END 2 */
+  if (xTaskCreate ((TaskFunction_t)StartLcdTask, "LcdTask", 128U, NULL, 24U, &LcdTaskHandle) != pdPASS) {
+    LcdTaskHandle = NULL;
+  }
 
+  /* USER CODE END 2 */
   /* Start scheduler */
   vTaskStartScheduler();
  
