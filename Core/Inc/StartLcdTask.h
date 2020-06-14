@@ -8,6 +8,8 @@
 #ifndef INC_STARTUSBTASK_H_
 #define INC_STARTUSBTASK_H_
 
+
+/* For glue table */
 enum LCD_CTRL {
   LCD_CTRL_UP = 0,
   LCD_CTRL_DOWN,
