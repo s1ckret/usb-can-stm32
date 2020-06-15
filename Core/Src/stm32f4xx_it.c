@@ -275,25 +275,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 
-uint8_t dataToReceive = 0;
+uint8_t dataToReceive[8] = {0};
 CAN_RxHeaderTypeDef rxHeader;
 BaseType_t pxHigherPriorityTaskWoken = 0;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, &dataToReceive) != HAL_OK) {
-    while(1);
-  }
+  HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, dataToReceive);
 
-  xQueueSendFromISR(queueToUsb, &dataToReceive, &pxHigherPriorityTaskWoken);
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+  xQueueSendFromISR(queueToUsb, dataToReceive, &pxHigherPriorityTaskWoken);
   xTaskNotifyFromISR(UsbTaskHandle, 2, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &rxHeader, &dataToReceive) != HAL_OK) {
-    while(1);
-  }
-  xQueueSendFromISR(queueToUsb, &dataToReceive, &pxHigherPriorityTaskWoken);
+  HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &rxHeader, dataToReceive);
+
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+  xQueueSendFromISR(queueToUsb, dataToReceive, &pxHigherPriorityTaskWoken);
   xTaskNotifyFromISR(UsbTaskHandle, 3, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
 }
 /* USER CODE END 1 */
