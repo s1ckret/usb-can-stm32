@@ -90,6 +90,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+
   HAL_Init();
 
   /* USER CODE BEGIN Init */
@@ -111,8 +112,8 @@ int main(void)
   MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
-  queueToUsb = xQueueCreate (16, sizeof(uint8_t));
-  queueToCan = xQueueCreate (16, sizeof(uint8_t));
+  queueToUsb = xQueueCreate (16, 8 * sizeof(uint8_t));
+  queueToCan = xQueueCreate (16, 8 * sizeof(uint8_t));
 
   if (xTaskCreate ((TaskFunction_t)StartHeartbeatTask, "heartbeatTask", 128U, NULL, 24U, &heartbeatTaskHandle) != pdPASS) {
     heartbeatTaskHandle = NULL;
