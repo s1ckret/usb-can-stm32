@@ -11,6 +11,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "utlCAN.h"
+
 #include "std_lcd.h"
 
 #define N_COLUMNS 16
@@ -20,8 +22,8 @@
 static int8_t x = 8;
 static int8_t y = 0;
 
-static uint32_t DLC = 3;
-static uint32_t Filter = 0x1FFFFFFE;
+static uint32_t DLC = 0;
+static uint32_t Filter = 0;
 
 typedef void (*process_ctrl)(void);
 
@@ -45,8 +47,9 @@ static process_ctrl glueTable[LCD_CTRL_COUNT] =
 
 void StartLcdTask(void *argument)
 {
+  DLC = CAN_GetDLC();
+  Filter = CAN_GetFilter();
 
-  vTaskDelay(1000);
   printf("DLC:    %u\n", DLC);
   printf("Fltr: 0x%08x\n", Filter);
   LCD_SetPos(x, y);
