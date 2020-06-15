@@ -43,8 +43,8 @@ void CAN_Init(void) {
   filter.FilterIdHigh = 0x0;
   filter.FilterIdLow = 0x0;
   /*Only accept one message at once*/
-  filter.FilterMaskIdHigh = 0xffff;
-  filter.FilterMaskIdLow = 0xffff;
+  filter.FilterMaskIdHigh = 0x0;
+  filter.FilterMaskIdLow = 0x0;
   filter.FilterMode = CAN_FILTERMODE_IDMASK;
   filter.FilterScale = CAN_FILTERSCALE_32BIT;
   filter.SlaveStartFilterBank = 14;
