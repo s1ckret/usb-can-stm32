@@ -21,7 +21,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-
+#include "FreeRTOS.h"
+#include "task.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "FreeRTOS.h"
@@ -168,6 +169,20 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles EXTI line0 interrupt.
+  */
+void EXTI0_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
   * @brief This function handles CAN1 RX0 interrupts.
   */
 void CAN1_RX0_IRQHandler(void)
@@ -253,6 +268,7 @@ void OTG_FS_IRQHandler(void)
 
   /* USER CODE END OTG_FS_IRQn 1 */
 }
+
 /* USER CODE BEGIN 1 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -267,6 +283,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   case GPIO_PIN_11: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_RIGHT, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
   case GPIO_PIN_15: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_SET, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    break;
+  case GPIO_PIN_0: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_FILTER_SET, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
     break;
   default:
     break;

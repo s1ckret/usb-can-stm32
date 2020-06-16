@@ -32,8 +32,10 @@ static void __ctrl_down(void);
 static void __ctrl_left(void);
 static void __ctrl_right(void);
 static void __ctrl_set(void);
+static void __ctrl_filter_set(void);
 
-static int unsaved_flag = 0;
+static uint8_t unsaved_flag = 0;
+static uint8_t is_filter_enabled = 0;
 static void __ctrl_disp_unsaved(void);
 
 static process_ctrl glueTable[LCD_CTRL_COUNT] =
@@ -42,7 +44,8 @@ static process_ctrl glueTable[LCD_CTRL_COUNT] =
   __ctrl_down,
   __ctrl_left,
   __ctrl_right,
-  __ctrl_set
+  __ctrl_set,
+  __ctrl_filter_set,
 };
 
 void StartLcdTask(void *argument)
@@ -180,5 +183,21 @@ static void __ctrl_disp_unsaved(void)
     LCD_SetPos(15, 0);
     LCD_SendChar('U');
   }
+  LCD_SetPos(x, y);
 }
 
+static void __ctrl_filter_set(void)
+{
+  is_filter_enabled ^= 1;
+  if (is_filter_enabled) {
+    /*Enable filter*/
+    LCD_SetPos(14, 0);
+    LCD_SendChar('F');
+  }
+  else {
+    /*Disable filter*/
+    LCD_SetPos(14, 0);
+    LCD_SendChar(' ');
+  }
+  LCD_SetPos(x, y);
+}
