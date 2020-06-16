@@ -16,7 +16,7 @@ CAN_TxHeaderTypeDef txHeader = {
   .DLC = 8,
   .IDE = CAN_ID_EXT,
   .RTR = CAN_RTR_DATA,
-  .StdId = 0xBEE,
+  .ExtId = 0xBEE,
 };
 
 void CAN_Init(void) {
@@ -74,6 +74,11 @@ void CAN_SetFilter(uint32_t filterValue)
 void CAN_SetDLC(uint8_t dlc)
 {
   txHeader.DLC = dlc;
+}
+
+void CAN_SetExtId(uint32_t id)
+{
+  txHeader.ExtId = id;
 }
 
 uint32_t CAN_GetFilter(void)

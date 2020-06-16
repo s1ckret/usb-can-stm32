@@ -13,6 +13,7 @@
 void CAN_Init(void);
 
 void CAN_SetFilter(uint32_t filterValue);
+void CAN_SetExtId(uint32_t id);
 void CAN_SetDLC(uint8_t dlc);
 
 uint32_t CAN_GetFilter(void);
