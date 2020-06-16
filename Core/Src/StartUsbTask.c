@@ -12,28 +12,26 @@
 #include "task.h"
 #include "queue.h"
 
-#include "usbd_cdc_if.h"
+#include "std_lcd.h"
 
 extern QueueHandle_t queueToUsb;
 
 void StartUsbTask(void *argument)
 {
-  uint8_t buf[60];
   uint32_t notificationNumber = 0;
-  uint8_t data[8] = {0};
+  uint8_t data[9] = {0};
+  LCD_SetPos(0, 0);
+  printf("Device. DLC: %u\n", CAN_GetDLC());
   for(;;)
   {
     if (xTaskNotifyWait(pdFALSE, pdTRUE, &notificationNumber, portMAX_DELAY) == pdTRUE) {
-      memset(buf, 0, 60);
       while (uxQueueMessagesWaiting(queueToUsb)) {
         if (xQueueReceive(queueToUsb, data, 0) == pdTRUE) {
-          sprintf(buf + strlen(buf), "%s", data);
+          vTaskDelay(10);
+          LCD_SetPos(0, 1);
+          printf("%s\n", data);
         }
       }
     }
-    else {
-      sprintf(buf, "UER!N=%u.\r\n", notificationNumber);
-    }
-    CDC_Transmit_FS(buf, strlen(buf));
   }
 }

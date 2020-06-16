@@ -254,23 +254,33 @@ void OTG_FS_IRQHandler(void)
   /* USER CODE END OTG_FS_IRQn 1 */
 }
 /* USER CODE BEGIN 1 */
+uint8_t heart[] = "<3";
+uint8_t milk[] = "milk";
+uint8_t love_milk[] = "LoveMilk";
+uint8_t color[] = "color";
+uint8_t o[] = "O";
+
+#include "std_lcd.h"
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   BaseType_t pxHigherPriorityTaskWoken = 0;
   switch (GPIO_Pin) {
-  case GPIO_PIN_6: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_UP, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  case GPIO_PIN_6: CAN_SetDLC(2); CAN_Send(heart);
     break;
-  case GPIO_PIN_8: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_DOWN, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  case GPIO_PIN_8: CAN_SetDLC(4); CAN_Send(milk);
     break;
-  case GPIO_PIN_9: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_LEFT, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  case GPIO_PIN_9: CAN_SetDLC(8); CAN_Send(love_milk);
     break;
-  case GPIO_PIN_11: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_RIGHT, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  case GPIO_PIN_11: CAN_SetDLC(5); CAN_Send(color);
     break;
-  case GPIO_PIN_15: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_SET, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  case GPIO_PIN_15: CAN_SetDLC(1); CAN_Send(o);
     break;
   default:
     break;
   }
+  LCD_SetPos(0, 0);
+  printf("Device. DLC: %u\n", CAN_GetDLC());
   HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
 }
 

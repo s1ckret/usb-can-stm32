@@ -113,19 +113,12 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   queueToUsb = xQueueCreate (16, 8 * sizeof(uint8_t));
-  queueToCan = xQueueCreate (16, 8 * sizeof(uint8_t));
 
   if (xTaskCreate ((TaskFunction_t)StartHeartbeatTask, "heartbeatTask", 128U, NULL, 24U, &heartbeatTaskHandle) != pdPASS) {
     heartbeatTaskHandle = NULL;
   }
-  if (xTaskCreate ((TaskFunction_t)StartUsbTask, "UsbTask", 128U, NULL, 24U, &UsbTaskHandle) != pdPASS) {
+  if (xTaskCreate ((TaskFunction_t)StartUsbTask, "UsbTask", 2 * 128U, NULL, 24U, &UsbTaskHandle) != pdPASS) {
     UsbTaskHandle = NULL;
-  }
-  if (xTaskCreate ((TaskFunction_t)StartCanTask, "CanTask", 128U, NULL, 24U, &CanTaskHandle) != pdPASS) {
-    CanTaskHandle = NULL;
-  }
-  if (xTaskCreate ((TaskFunction_t)StartLcdTask, "LcdTask", 128U, NULL, 24U, &LcdTaskHandle) != pdPASS) {
-    LcdTaskHandle = NULL;
   }
 
   /* USER CODE END 2 */
