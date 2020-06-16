@@ -25,6 +25,10 @@
 #include "task.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "StartLcdTask.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,10 +63,13 @@
 
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+extern CAN_HandleTypeDef hcan1;
 extern TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN EV */
-
+extern TaskHandle_t UsbTaskHandle;
+extern QueueHandle_t queueToUsb;
+extern TaskHandle_t LcdTaskHandle;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -162,6 +169,64 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles EXTI line0 interrupt.
+  */
+void EXTI0_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI0_IRQn 0 */
+
+  /* USER CODE END EXTI0_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+  /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  /* USER CODE END EXTI0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles CAN1 RX0 interrupts.
+  */
+void CAN1_RX0_IRQHandler(void)
+{
+  /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
+
+  /* USER CODE END CAN1_RX0_IRQn 0 */
+  HAL_CAN_IRQHandler(&hcan1);
+  /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
+
+  /* USER CODE END CAN1_RX0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles CAN1 RX1 interrupt.
+  */
+void CAN1_RX1_IRQHandler(void)
+{
+  /* USER CODE BEGIN CAN1_RX1_IRQn 0 */
+
+  /* USER CODE END CAN1_RX1_IRQn 0 */
+  HAL_CAN_IRQHandler(&hcan1);
+  /* USER CODE BEGIN CAN1_RX1_IRQn 1 */
+
+  /* USER CODE END CAN1_RX1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line[9:5] interrupts.
+  */
+void EXTI9_5_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+
+  /* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
   */
 void TIM1_UP_TIM10_IRQHandler(void)
@@ -173,6 +238,21 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line[15:10] interrupts.
+  */
+void EXTI15_10_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+
+  /* USER CODE END EXTI15_10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+
+  /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
 /**
@@ -190,6 +270,48 @@ void OTG_FS_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  BaseType_t pxHigherPriorityTaskWoken = 0;
+  switch (GPIO_Pin) {
+  case GPIO_PIN_6: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_UP, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    break;
+  case GPIO_PIN_8: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_DOWN, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    break;
+  case GPIO_PIN_9: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_LEFT, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    break;
+  case GPIO_PIN_11: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_RIGHT, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    break;
+  case GPIO_PIN_15: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_SET, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    break;
+  case GPIO_PIN_0: xTaskNotifyFromISR(LcdTaskHandle, LCD_CTRL_FILTER_SET, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    break;
+  default:
+    break;
+  }
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+}
 
+
+uint8_t dataToReceive[8] = {0};
+CAN_RxHeaderTypeDef rxHeader;
+BaseType_t pxHigherPriorityTaskWoken = 0;
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, dataToReceive);
+
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+  xQueueSendFromISR(queueToUsb, dataToReceive, &pxHigherPriorityTaskWoken);
+  xTaskNotifyFromISR(UsbTaskHandle, 2, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+}
+
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &rxHeader, dataToReceive);
+
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+  xQueueSendFromISR(queueToUsb, dataToReceive, &pxHigherPriorityTaskWoken);
+  xTaskNotifyFromISR(UsbTaskHandle, 3, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

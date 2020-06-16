@@ -23,7 +23,10 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "utlCAN.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,10 +66,7 @@
   */
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
-/* Define size for the receive and transmit buffer over CDC */
-/* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  2048
-#define APP_TX_DATA_SIZE  2048
+
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
@@ -90,16 +90,10 @@
   * @brief Private variables.
   * @{
   */
-/* Create buffer for reception and transmission           */
-/* It's up to user to redefine and/or remove those define */
-/** Received data over USB are stored in this buffer      */
-uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
-
-/** Data to send over USB CDC are stored in this buffer   */
-uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-
+uint8_t UserRxBufferFS[8];
+uint8_t RxBuf[64];
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -114,6 +108,9 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
+
+extern QueueHandle_t queueToCan;
+extern TaskHandle_t CanTaskHandle;
 
 /* USER CODE END EXPORTED_VARIABLES */
 
@@ -157,8 +154,6 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
-  /* Set Application Buffers */
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
   return (USBD_OK);
   /* USER CODE END 3 */
@@ -266,7 +261,40 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+  BaseType_t pxHigherPriorityTaskWoken = 0;
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+  uint8_t DLC = CAN_GetDLC();
+  uint8_t RxLen = strlen(RxBuf);
+
+  if (*Len == DLC) {
+    xQueueSendFromISR(queueToCan, Buf, &pxHigherPriorityTaskWoken);
+    xTaskNotifyFromISR(CanTaskHandle, 4, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  }
+  else if (*Len < DLC) {
+    memcpy(RxBuf + RxLen, Buf, *Len);
+    if (RxLen + *Len >= DLC) {
+      xQueueSendFromISR(queueToCan, RxBuf, &pxHigherPriorityTaskWoken);
+      memset(RxBuf, 0, DLC);
+      if (RxLen + *Len > DLC) {
+        memmove(RxBuf, RxBuf + DLC, *Len);
+      }
+      xTaskNotifyFromISR(CanTaskHandle, 4, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+    }
+  }
+  else {
+    /* Len > DLC */
+    uint8_t msg_count = *Len / DLC;
+    for (uint8_t i = 0; i < msg_count; i++) {
+      xQueueSendFromISR(queueToCan, Buf + DLC * i, &pxHigherPriorityTaskWoken);
+    }
+    uint8_t bytes_transmitted = msg_count * DLC;
+    if (*Len > bytes_transmitted) {
+      memmove(RxBuf + RxLen, Buf + bytes_transmitted, *Len - bytes_transmitted);
+    }
+    xTaskNotifyFromISR(CanTaskHandle, 4, eSetValueWithOverwrite, &pxHigherPriorityTaskWoken);
+  }
+
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -290,8 +318,10 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   if (hcdc->TxState != 0){
     return USBD_BUSY;
   }
+
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
   /* USER CODE END 7 */
   return result;
 }

@@ -25,7 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,25 +45,29 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-CAN_HandleTypeDef hcan1;
 
-/* Definitions for heartbeatTask */
-osThreadId_t heartbeatTaskHandle;
-const osThreadAttr_t heartbeatTask_attributes = {
-  .name = "heartbeatTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
-};
+/* Tasks */
+TaskHandle_t heartbeatTaskHandle;
+TaskHandle_t UsbTaskHandle;
+TaskHandle_t CanTaskHandle;
+TaskHandle_t LcdTaskHandle;
+
+/* Queues */
+QueueHandle_t queueToUsb;
+QueueHandle_t queueToCan;
 /* USER CODE BEGIN PV */
-
+extern CAN_HandleTypeDef hcan1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_CAN1_Init(void);
 void StartHeartbeatTask(void *argument);
+extern void StartUsbTask(void *argument);
+extern void StartCanTask(void *argument);
+extern void StartLcdTask(void *argument);
 
+static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -84,6 +90,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+
   HAL_Init();
 
   /* USER CODE BEGIN Init */
@@ -99,40 +106,31 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_CAN1_Init();
+  CAN_Init();
+  LCD_Init();
+  /* Initialize interrupts */
+  MX_NVIC_Init();
+
   /* USER CODE BEGIN 2 */
+  queueToUsb = xQueueCreate (16, 8 * sizeof(uint8_t));
+  queueToCan = xQueueCreate (16, 8 * sizeof(uint8_t));
+
+  if (xTaskCreate ((TaskFunction_t)StartHeartbeatTask, "heartbeatTask", 128U, NULL, 24U, &heartbeatTaskHandle) != pdPASS) {
+    heartbeatTaskHandle = NULL;
+  }
+  if (xTaskCreate ((TaskFunction_t)StartUsbTask, "UsbTask", 2 * 128U, NULL, 24U, &UsbTaskHandle) != pdPASS) {
+    UsbTaskHandle = NULL;
+  }
+  if (xTaskCreate ((TaskFunction_t)StartCanTask, "CanTask", 2 * 128U, NULL, 20U, &CanTaskHandle) != pdPASS) {
+    CanTaskHandle = NULL;
+  }
+  if (xTaskCreate ((TaskFunction_t)StartLcdTask, "LcdTask", 2 * 128U, NULL, 24U, &LcdTaskHandle) != pdPASS) {
+    LcdTaskHandle = NULL;
+  }
 
   /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* creation of heartbeatTask */
-  heartbeatTaskHandle = osThreadNew(StartHeartbeatTask, NULL, &heartbeatTask_attributes);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
   /* Start scheduler */
-  osKernelStart();
+  vTaskStartScheduler();
  
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
@@ -150,6 +148,7 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
+
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -165,7 +164,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 7;
@@ -189,40 +188,29 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief CAN1 Initialization Function
-  * @param None
+  * @brief NVIC Configuration.
   * @retval None
   */
-static void MX_CAN1_Init(void)
+static void MX_NVIC_Init(void)
 {
-
-  /* USER CODE BEGIN CAN1_Init 0 */
-
-  /* USER CODE END CAN1_Init 0 */
-
-  /* USER CODE BEGIN CAN1_Init 1 */
-
-  /* USER CODE END CAN1_Init 1 */
-  hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 16;
-  hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
-  hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = DISABLE;
-  hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = DISABLE;
-  hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN CAN1_Init 2 */
-
-  /* USER CODE END CAN1_Init 2 */
-
+  /* EXTI15_10_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+  /* OTG_FS_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
+  /* EXTI9_5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+  /* CAN1_RX0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+  /* CAN1_RX1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 }
 
 /**
@@ -266,13 +254,13 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PC6 PC8 PC9 PC11 */
   GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_11;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -297,7 +285,8 @@ void StartHeartbeatTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(400);
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
   }
   /* USER CODE END 5 */ 
 }
