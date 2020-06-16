@@ -40,11 +40,11 @@ void CAN_Init(void) {
   filter.FilterActivation = ENABLE;
   filter.FilterBank = 0;
   filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  filter.FilterIdHigh = 0x0;
-  filter.FilterIdLow = 0x0;
+  filter.FilterIdHigh = (uint16_t)(0x1fbf9001>>13);
+  filter.FilterIdLow = (uint16_t)(0x1fbf9001<<3) | CAN_ID_EXT;
   /*Only accept one message at once*/
-  filter.FilterMaskIdHigh = 0x0;
-  filter.FilterMaskIdLow = 0x0;
+  filter.FilterMaskIdHigh = (uint16_t)(0xffffffff>>13);
+  filter.FilterMaskIdLow = (uint16_t)(0xffffffff<<3) | CAN_ID_EXT;
   filter.FilterMode = CAN_FILTERMODE_IDMASK;
   filter.FilterScale = CAN_FILTERSCALE_32BIT;
   filter.SlaveStartFilterBank = 14;
@@ -64,22 +64,21 @@ void CAN_Init(void) {
 
 void CAN_FilterOn()
 {
-  if (  filter.FilterActivation == DISABLE) {
-    filter.FilterActivation = ENABLE;
-    if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
-      Error_Handler();
-    }
+  filter.FilterMaskIdHigh = (uint16_t)(0xffffffff>>13);
+  filter.FilterMaskIdLow = (uint16_t)(0xffffffff << 3) | CAN_ID_EXT;
+  if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
+    Error_Handler();
   }
 }
 
 void CAN_FilterOff()
 {
-  if (  filter.FilterActivation == ENABLE) {
-    filter.FilterActivation = DISABLE;
-    if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
-      Error_Handler();
-    }
+  filter.FilterMaskIdHigh = (uint16_t)(0x0 >> 13);
+  filter.FilterMaskIdLow = (uint16_t)(0x0 << 3) | CAN_ID_EXT;
+  if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
+    Error_Handler();
   }
+
 }
 
 void CAN_SetFilter(uint32_t filterValue)

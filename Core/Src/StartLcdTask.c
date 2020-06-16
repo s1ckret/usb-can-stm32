@@ -35,7 +35,7 @@ static void __ctrl_set(void);
 static void __ctrl_filter_set(void);
 
 static uint8_t unsaved_flag = 0;
-static uint8_t is_filter_enabled = 0;
+static uint8_t is_filter_enabled = 1;
 static void __ctrl_disp_unsaved(void);
 
 static process_ctrl glueTable[LCD_CTRL_COUNT] =
@@ -55,6 +55,8 @@ void StartLcdTask(void *argument)
 
   printf("DLC:    %u\n", DLC);
   printf("Fltr: 0x%08x\n", Filter);
+  LCD_SetPos(14, 0);
+  LCD_SendChar('F');
   LCD_SetPos(x, y);
 
   uint32_t notificationNumber = 0;
