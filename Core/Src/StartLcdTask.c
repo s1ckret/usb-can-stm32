@@ -156,13 +156,13 @@ static void __ctrl_right(void)
 static void __ctrl_set(void)
 {
   if (y == 0) {
-    /* Set DLC to CAN */
+    CAN_SetDLC(DLC);
     LCD_SetPos(13, 0);
     LCD_SendChar(' ');
     unsaved_flag &= 0b10;
   }
   else {
-    /* Set Filter to CAN */
+    CAN_SetFilter(Filter);
     LCD_SetPos(15, 0);
     LCD_SendChar(' ');
     unsaved_flag &= 0b01;
