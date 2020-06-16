@@ -1,17 +1,17 @@
 # USB to CAN adapter
 Project at Global Logic Linux Kernel BaseCamp.
 #### TODO list:
-  - [ ] FreeRTOS 
-    - [ ] Tasks
-    - [ ] Queues
-    - [ ] Notifications
-  - [ ] USB 
-    - [ ] Interrupt handling
-  - [ ] Buttons
-    - [ ] Interrupt handling
-  - [ ] LCD
-    - [ ] Filter Mask selection for CAN
-  - [ ] LED
-    - [ ] Heartbeat
-    - [ ] CAN Status
+  - [x] FreeRTOS 
+    - [x] Tasks
+    - [x] Queues
+    - [x] Notifications
+  - [x] USB 
+    - [x] Interrupt handling
+  - [x] Buttons
+    - [x] Interrupt handling
+  - [x] LCD
+  - [ ] Filter Mask selection for CAN
+  - [x] LED
+    - [x] Heartbeat
+    - [x] CAN Status
  
