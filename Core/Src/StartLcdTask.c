@@ -190,12 +190,12 @@ static void __ctrl_filter_set(void)
 {
   is_filter_enabled ^= 1;
   if (is_filter_enabled) {
-    /*Enable filter*/
+    CAN_FilterOn();
     LCD_SetPos(14, 0);
     LCD_SendChar('F');
   }
   else {
-    /*Disable filter*/
+    CAN_FilterOff();
     LCD_SetPos(14, 0);
     LCD_SendChar(' ');
   }

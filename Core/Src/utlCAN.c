@@ -62,11 +62,31 @@ void CAN_Init(void) {
   }
 }
 
+void CAN_FilterOn()
+{
+  if (  filter.FilterActivation == DISABLE) {
+    filter.FilterActivation = ENABLE;
+    if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
+      Error_Handler();
+    }
+  }
+}
+
+void CAN_FilterOff()
+{
+  if (  filter.FilterActivation == ENABLE) {
+    filter.FilterActivation = DISABLE;
+    if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
+      Error_Handler();
+    }
+  }
+}
+
 void CAN_SetFilter(uint32_t filterValue)
 {
   filter.FilterIdHigh = (uint16_t)(filterValue >> 13);
   filter.FilterIdLow = (uint16_t)(filterValue << 3) | CAN_ID_EXT;
-  if (HAL_CAN_ConfigFilter(&hcan1, &filterValue) != HAL_OK) {
+  if (HAL_CAN_ConfigFilter(&hcan1, &filter) != HAL_OK) {
     Error_Handler();
   }
 }

@@ -12,6 +12,9 @@
 
 void CAN_Init(void);
 
+void CAN_FilterOn();
+void CAN_FilterOff();
+
 void CAN_SetFilter(uint32_t filterValue);
 void CAN_SetDLC(uint8_t dlc);
 
