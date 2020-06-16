@@ -16,7 +16,7 @@ CAN_TxHeaderTypeDef txHeader = {
   .DLC = 8,
   .IDE = CAN_ID_EXT,
   .RTR = CAN_RTR_DATA,
-  .StdId = 0xBEE,
+  .StdId = 0xDEAD,
 };
 
 void CAN_Init(void) {
