@@ -124,7 +124,7 @@ int main(void)
   if (xTaskCreate ((TaskFunction_t)StartCanTask, "CanTask", 2 * 128U, NULL, 20U, &CanTaskHandle) != pdPASS) {
     CanTaskHandle = NULL;
   }
-  if (xTaskCreate ((TaskFunction_t)StartLcdTask, "LcdTask", 128U, NULL, 24U, &LcdTaskHandle) != pdPASS) {
+  if (xTaskCreate ((TaskFunction_t)StartLcdTask, "LcdTask", 2 * 128U, NULL, 24U, &LcdTaskHandle) != pdPASS) {
     LcdTaskHandle = NULL;
   }
 
