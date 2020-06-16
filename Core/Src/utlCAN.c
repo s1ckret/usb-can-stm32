@@ -78,7 +78,7 @@ void CAN_SetDLC(uint8_t dlc)
 
 void CAN_SetExtId(uint32_t id)
 {
-  txHeader.ExtId = id;
+  txHeader.ExtId = id | CAN_ID_EXT;
 }
 
 uint32_t CAN_GetFilter(void)

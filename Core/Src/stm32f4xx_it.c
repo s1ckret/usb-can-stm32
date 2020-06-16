@@ -266,15 +266,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   BaseType_t pxHigherPriorityTaskWoken = 0;
   switch (GPIO_Pin) {
-  case GPIO_PIN_6: CAN_SetDLC(2); CAN_Send(heart);
+  case GPIO_PIN_6: CAN_SetDLC(2); CAN_SetExtId(0x00C0FFEE << 3); CAN_Send(heart);
     break;
-  case GPIO_PIN_8: CAN_SetDLC(4); CAN_Send(milk);
+  case GPIO_PIN_8: CAN_SetDLC(4); CAN_SetExtId(0x0000ABED << 3); CAN_Send(milk);
     break;
-  case GPIO_PIN_9: CAN_SetDLC(8); CAN_Send(love_milk);
+  case GPIO_PIN_9: CAN_SetDLC(8); CAN_SetExtId(0x0000BEEF << 3); CAN_Send(love_milk);
     break;
-  case GPIO_PIN_11: CAN_SetDLC(5); CAN_Send(color);
+  case GPIO_PIN_11: CAN_SetDLC(5); CAN_SetExtId(0x000C010F << 3); CAN_Send(color);
     break;
-  case GPIO_PIN_15: CAN_SetDLC(1); CAN_Send(o);
+  case GPIO_PIN_15: CAN_SetDLC(1); CAN_SetExtId(0x1FBF9001 << 3); CAN_Send(o);
     break;
   default:
     break;
